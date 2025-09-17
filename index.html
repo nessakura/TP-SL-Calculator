@@ -1,0 +1,193 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>TP/SL Calculator</title>
+  <style>
+    body {
+      font-family: 'Poppins', sans-serif;
+      background: linear-gradient(135deg, #4c66e9, #864cae);
+      display: flex; justify-content: center; align-items: center;
+      min-height: 100vh; padding: 20px;
+    }
+
+    .calculator {
+      background: #fff;
+      border-radius: 20px;
+      padding: 35px;
+      box-shadow: 0 15px 40px rgba(0, 0, 0, 0.12);
+      max-width: 480px; width: 100%;
+    }
+
+    h1 {
+      text-align: center; font-size: 2rem;
+      font-weight: 700; color: #2d2f3a; margin-bottom: 15px;
+    }
+
+    .logo {
+      font-size: 3rem; text-align: center;
+      margin-bottom: 10px; color: #4c66e9;
+    }
+
+    .form-group {margin-bottom: 18px;}
+    label {font-weight: 600; color: #444; margin-bottom: 8px; display: block;}
+    input[type="number"] {
+      width: 100%; padding: 14px 16px;
+      border-radius: 14px; border: 1px solid #ddd;
+      background: #f9fafb; font-size: 1rem;
+      transition: all 0.3s;
+    }
+    input[type="number"]:focus {
+      outline: none; border-color: #4c66e9;
+      box-shadow: 0 0 0 4px rgba(76,102,233,0.2);
+      background: #fff;
+    }
+
+    .switch-container {
+      display: flex; background: #f3f4f6;
+      border-radius: 12px; padding: 4px; margin-bottom: 20px;
+    }
+    .switch-option {
+      flex: 1; text-align: center; padding: 12px;
+      border-radius: 10px; font-weight: 600;
+      cursor: pointer; color: #6b7280;
+      transition: all 0.3s;
+    }
+    .switch-option.active.buy {background: #22c55e; color: #fff;}
+    .switch-option.active.sell {background: #ef4444; color: #fff;}
+
+    .calculate-btn {
+      width: 100%; padding: 15px;
+      border: none; border-radius: 14px;
+      font-size: 1.1rem; font-weight: 700;
+      background: linear-gradient(45deg, #4c66e9, #864cae);
+      color: #fff; cursor: pointer;
+      transition: all 0.3s ease;
+    }
+    .calculate-btn:hover {transform: translateY(-2px);}
+
+    .results {
+      margin-top: 25px; padding: 22px;
+      background: #f9fafb; border-radius: 14px;
+      border: 1px solid #e5e7eb; display: none;
+    }
+    .result-item {
+      display: flex; justify-content: space-between;
+      padding: 10px 0; border-bottom: 1px solid #eee;
+    }
+    .result-item:last-child {border-bottom: none;}
+    .result-label {font-weight: 600; color: #374151;}
+    .result-value {font-weight: 700; font-size: 1.05rem;}
+    .tp-value {color: #22c55e;}
+    .sl-value {color: #ef4444;}
+    .entry-value {color: #4c66e9;}
+    .rrr-value {color: #f59e0b;}
+  </style>
+</head>
+<body>
+  <div class="calculator">
+    <span class="logo">📊</span>
+    <h1>TP/SL Calculator</h1>
+
+    <div class="form-group">
+      <label for="entryPrice">ราคาเปิดออเดอร์:</label>
+      <input type="number" id="entryPrice" step="0.01" placeholder="เช่น 3200.77">
+    </div>
+
+    <div class="form-group">
+      <label for="points">ระยะ Points:</label>
+      <input type="number" id="points" step="1" placeholder="เช่น 100">
+    </div>
+
+    <div class="switch-container">
+      <div class="switch-option buy active" onclick="selectSide('buy')">BUY</div>
+      <div class="switch-option sell" onclick="selectSide('sell')">SELL</div>
+    </div>
+
+    <button class="calculate-btn" onclick="calculate()">คำนวณ</button>
+
+    <div class="results" id="results">
+      <div class="result-item">
+        <span class="result-label">ฝั่ง:</span>
+        <span class="result-value" id="sideDisplay">-</span>
+      </div>
+      <div class="result-item">
+        <span class="result-label">ราคาเปิด:</span>
+        <span class="result-value entry-value" id="entryDisplay">-</span>
+      </div>
+      <div class="result-item">
+        <span class="result-label">Take Profit (TP):</span>
+        <span class="result-value tp-value" id="tpDisplay">-</span>
+      </div>
+      <div class="result-item">
+        <span class="result-label">Stop Loss (SL):</span>
+        <span class="result-value sl-value" id="slDisplay">-</span>
+      </div>
+      <div class="result-item">
+        <span class="result-label">TP (Pips):</span>
+        <span class="result-value tp-value" id="tpPips">-</span>
+      </div>
+      <div class="result-item">
+        <span class="result-label">SL (Pips):</span>
+        <span class="result-value sl-value" id="slPips">-</span>
+      </div>
+      <div class="result-item">
+        <span class="result-label">Risk/Reward Ratio:</span>
+        <span class="result-value rrr-value" id="rrrDisplay">-</span>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    let currentSide = 'buy';
+
+    function selectSide(side) {
+      currentSide = side;
+      document.querySelectorAll('.switch-option').forEach(opt => opt.classList.remove('active'));
+      document.querySelector(`.switch-option.${side}`).classList.add('active');
+    }
+
+    function calculate() {
+      const entryPrice = parseFloat(document.getElementById('entryPrice').value);
+      const points = parseInt(document.getElementById('points').value);
+
+      if (isNaN(entryPrice) || isNaN(points) || entryPrice <= 0 || points <= 0) {
+        alert('กรุณาใส่ราคาเปิดและระยะ Points ที่ถูกต้อง');
+        document.getElementById('results').style.display = 'none';
+        return;
+      }
+
+      const pipValue = points / 100;
+      let tp, sl;
+      if (currentSide === 'buy') {
+        tp = entryPrice + pipValue;
+        sl = entryPrice - pipValue;
+      } else {
+        tp = entryPrice - pipValue;
+        sl = entryPrice + pipValue;
+      }
+
+      // Pips คำนวณจากความต่าง
+      const tpPips = Math.abs(tp - entryPrice) * 100;
+      const slPips = Math.abs(entryPrice - sl) * 100;
+
+      // Risk/Reward Ratio
+      const rrr = slPips > 0 ? (tpPips / slPips).toFixed(2) : "-";
+
+      document.getElementById('sideDisplay').textContent = currentSide.toUpperCase();
+      document.getElementById('entryDisplay').textContent = entryPrice.toFixed(2);
+      document.getElementById('tpDisplay').textContent = tp.toFixed(2);
+      document.getElementById('slDisplay').textContent = sl.toFixed(2);
+      document.getElementById('tpPips').textContent = tpPips.toFixed(1) + " pips";
+      document.getElementById('slPips').textContent = slPips.toFixed(1) + " pips";
+      document.getElementById('rrrDisplay').textContent = rrr !== "-" ? `1 : ${rrr}` : "-";
+
+      document.getElementById('results').style.display = 'block';
+    }
+
+    document.getElementById('entryPrice').value = '3200.77';
+    document.getElementById('points').value = '100';
+  </script>
+</body>
+</html>
